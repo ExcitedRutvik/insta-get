@@ -69,32 +69,46 @@ img{
     $media_arr=array();
     $url=trim($_POST["url"]);
     $st=strpos($url,"?") !== false;
+   
     if($st!=false){
       $st=strpos($url,"?");
       $url=substr($url,0,$st);
     }
+    // echo $st;
+    // echo $url;
     $myfile = fopen("data_search", "a") or die("Unable to open file!");
     fwrite($myfile, $url);
     fwrite($myfile, "\n");
     fclose($myfile);
     $str_arr = explode ("/", $url);
+
+    // Array ( [0] => https: [1] => [2] => www.instagram.com [3] => p [4] => CT65w5FIPHk [5] => ) example array $str_arr.
+
     $con=0;
     $tem=strtolower(trim($str_arr[2]));
     $tem=substr($tem,strlen($tem)-13,strlen($tem));
+    // echo $tem;
     if($tem=="instagram.com"){
       if(strtolower(trim($str_arr[3]))=="p")
       {
         if(trim($str_arr[3])=="p"){
-          $fi_url=rtrim($url,'/')."/?__a=1";
+          $fi_url=rtrim($url,'/')."/?__a=1"; //graphql query to extract user data using ?__a=1.
+          // echo $fi_url;
           $myfile = fopen($fi_url, "r") or die("Unable to open file!");
+          // echo $myfile;
           $str="";
           while(!feof($myfile)) {
             $te=trim(fgets($myfile));
             $str=$str.$te;
-          }
+          } // converts query output file in a single line $str.
+          // echo $str;
           fclose($myfile);
+          // echo $str;
           $json = json_decode($str, true);
+          // var_dump($json);
+
           if($json["graphql"]["shortcode_media"]["__typename"]=="GraphSidecar"){
+            // echo 'here in first if';
             for ($i=0; $i <count($json["graphql"]["shortcode_media"]["edge_sidecar_to_children"]["edges"]) ; $i++) {
               $te=$json["graphql"]["shortcode_media"]["edge_sidecar_to_children"]["edges"][$i]["node"]["display_url"];
               array_push($img_arr,$te);
@@ -105,6 +119,7 @@ img{
             }
           }
           else{
+            // echo 'here in first else';
             $te=$json["graphql"]["shortcode_media"]["display_url"];
             array_push($img_arr,$te);
             if($json["graphql"]["shortcode_media"]["__typename"]=="GraphVideo"){
@@ -117,6 +132,7 @@ img{
         else{
           $con=0;
         }
+        // print_r($media_arr);
       }
       else{
         $fi_url=rtrim($url,'/')."/?__a=1";
@@ -129,13 +145,18 @@ img{
             $str=$str.$te;
           }
           fclose($myfile);
+          // echo $str;
           $json = json_decode($str, true);
+          // var_dump($json);
           $te=$json["logging_page_id"];
+          // echo $te;
           $te=explode ("_", $te);
           $uid=$te[1];
+          // echo $uid;
           if(strlen($uid)>0){
             $ur="https://i.instagram.com/api/v1/users/".$uid."/info/";
             $myfile = fopen($ur, "r") or die("Unable to open file!");
+            echo $myfile;
             $str="";
             while(!feof($myfile)) {
               $te=trim(fgets($myfile));
@@ -208,7 +229,6 @@ img{
         echo "<h3 style=\"font-size:4vw; color:#ccff99\">No Insta Media Found :(</h3>";
       }
     }
-
     ?>
     </center>
   </div>
